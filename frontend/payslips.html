@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payslips - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Digital Payslips & Salary Slips</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Salary Statements & PDF Downloads</h2>
+              <p style="font-size:0.84rem; color:var(--text-muted); margin-top:2px;">
+                Verified payslips containing earnings, statutory deductions, bank accounts, and corporate stamps.
+              </p>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Payslip Ref</th>
+                  <th>Employee</th>
+                  <th>Period</th>
+                  <th>Gross Salary</th>
+                  <th>Total Deductions</th>
+                  <th>Net Take-Home</th>
+                  <th>Payment Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="payslips-tbody">
+                <tr><td colspan="8" style="text-align:center; padding:24px;">Loading payslips...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    async function loadPayslips() {
+      try {
+        const res = await fetch('/api/payslips');
+        const data = await res.json();
+        if (data.success) {
+          renderPayslips(data.payslips);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderPayslips(list) {
+      const tbody = document.getElementById('payslips-tbody');
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">No payslips available for your profile.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(p => {
+        const photo = p.profile_picture || '/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg';
+
+        return `
+          <tr>
+            <td style="font-family:monospace; font-weight:700; color:#1e3a8a;">
+              ${p.payslip_number}
+            </td>
+            <td>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <img src="${photo}" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid #cbd5e1;" onerror="this.src='/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg'" />
+                <div>
+                  <div style="font-weight:600; color:var(--dark);">${p.employee_name}</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">${p.employee_code} • ${p.department_name}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-weight:600;">${p.period_name}</td>
+            <td style="font-weight:600; color:#1e3a8a;">${EPMS.formatINR(p.gross_salary)}</td>
+            <td style="color:#dc2626;">-${EPMS.formatINR(p.total_deductions)}</td>
+            <td style="font-weight:700; color:#059669; font-size:1.02rem;">${EPMS.formatINR(p.net_salary)}</td>
+            <td><span class="badge ${p.payment_status === 'Paid' ? 'badge-success' : 'badge-warning'}">${p.payment_status}</span></td>
+            <td>
+              <a href="/api/payslips/${p.payroll_id}/download" class="btn btn-primary btn-sm" download target="_blank">
+                <svg style="width:14px; height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download PDF
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPayslips);
+  </script>
+</body>
+</html>

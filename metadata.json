@@ -1,0 +1,6 @@
+{
+  "name": "Employee Payroll Management System (EPMS)",
+  "description": "Enterprise Employee Payroll Management System featuring role-based access for Admin, HR, and Employees with attendance tracking, salary structures, payroll processing, PDF payslips, and MySQL schema.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

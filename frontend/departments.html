@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Departments - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Departments & Designations</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <div>
+            <h2 style="font-size:1.1rem; font-weight:700; color:var(--dark);">Organizational Hierarchy</h2>
+            <p style="font-size:0.85rem; color:var(--text-muted);">Manage divisions, designations, and departmental leadership.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddDeptModal()">
+            <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add Department
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px;">
+          <!-- Departments Table -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">All Departments</h2>
+            </div>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Department Name</th>
+                    <th>Head of Dept</th>
+                    <th>Staff Count</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dept-tbody">
+                  <tr><td colspan="5" style="text-align:center; padding:20px;">Loading departments...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Designations List -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Job Designations</h2>
+            </div>
+            <div class="card-body" style="padding:16px 20px;">
+              <div id="desig-list" style="display:flex; flex-direction:column; gap:10px;">
+                Loading designations...
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Department Modal -->
+  <div class="modal-overlay" id="dept-modal">
+    <div class="modal-dialog" style="max-width:500px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Department</h3>
+        <button class="modal-close" onclick="EPMS.closeModal('dept-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="dept-form" onsubmit="saveDepartment(event)">
+          <div class="form-group">
+            <label class="form-label">Department Name *</label>
+            <input type="text" id="dept-name" class="form-control" placeholder="e.g. Quality Assurance" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Department Code * (Unique)</label>
+            <input type="text" id="dept-code" class="form-control" placeholder="e.g. QA" required style="text-transform:uppercase;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Head of Department</label>
+            <input type="text" id="dept-head" class="form-control" placeholder="e.g. Marcus Aurelius">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea id="dept-desc" class="form-control" rows="2" placeholder="Mandate and responsibilities..."></textarea>
+          </div>
+          <div class="modal-footer" style="padding:16px 0 0 0; background:none;">
+            <button type="button" class="btn btn-outline" onclick="EPMS.closeModal('dept-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Department</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    async function loadData() {
+      try {
+        const [deptRes, desigRes] = await Promise.all([
+          fetch('/api/departments'),
+          fetch('/api/designations'),
+        ]);
+        const deptData = await deptRes.json();
+        const desigData = await desigRes.json();
+
+        if (deptData.success) {
+          renderDepartments(deptData.departments);
+        }
+        if (desigData.success) {
+          renderDesignations(desigData.designations);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderDepartments(list) {
+      const tbody = document.getElementById('dept-tbody');
+      tbody.innerHTML = list.map(d => `
+        <tr>
+          <td><span class="badge badge-info" style="font-family:monospace;">${d.department_code}</span></td>
+          <td style="font-weight:600; color:var(--dark);">${d.department_name}</td>
+          <td>${d.head_of_department || '—'}</td>
+          <td><span class="badge badge-success">${d.active_employees_count} Active Staff</span></td>
+          <td>
+            <button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deleteDept(${d.id}, '${d.department_name}')">
+              Delete
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderDesignations(list) {
+      const container = document.getElementById('desig-list');
+      container.innerHTML = list.map(d => `
+        <div style="padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:600; font-size:0.88rem; color:#0f172a;">${d.designation_name}</div>
+            <div style="font-size:0.75rem; color:#64748b;">${d.department_name} • Code: ${d.designation_code}</div>
+          </div>
+          <span class="badge badge-info" style="font-size:0.7rem;">Active</span>
+        </div>
+      `).join('');
+    }
+
+    function openAddDeptModal() {
+      document.getElementById('dept-form').reset();
+      EPMS.openModal('dept-modal');
+    }
+
+    async function saveDepartment(e) {
+      e.preventDefault();
+      const payload = {
+        department_name: document.getElementById('dept-name').value,
+        department_code: document.getElementById('dept-code').value,
+        head_of_department: document.getElementById('dept-head').value,
+        description: document.getElementById('dept-desc').value,
+      };
+
+      try {
+        const res = await fetch('/api/departments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.closeModal('dept-modal');
+          EPMS.showToast('Department created successfully', 'success');
+          loadData();
+        } else {
+          EPMS.showToast(data.message, 'error');
+        }
+      } catch (err) {
+        EPMS.showToast('Failed to create department', 'error');
+      }
+    }
+
+    async function deleteDept(id, name) {
+      if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+      try {
+        const res = await fetch(`/api/departments/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.showToast(data.message, 'success');
+          loadData();
+        } else {
+          EPMS.showToast(data.message, 'error');
+        }
+      } catch (err) {
+        EPMS.showToast('Failed to delete department', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>

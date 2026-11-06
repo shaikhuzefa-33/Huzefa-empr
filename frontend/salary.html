@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salary Structures - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Salary Structures & Compensation Config</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <!-- Formula Callout -->
+        <div class="card" style="background:#eff6ff; border-color:#bfdbfe; margin-bottom:24px;">
+          <div class="card-body" style="padding:16px 20px;">
+            <div style="font-weight:700; color:#1e40af; font-size:0.9rem; margin-bottom:4px;">Statutory & Compensation Rules</div>
+            <p style="font-size:0.84rem; color:#1e3a8a;">
+              <strong>Gross Salary</strong> = Basic Salary + Total Allowances (HRA + DA + Special + Other) + Bonus<br>
+              <strong>Net Salary</strong> = Gross Salary - Total Deductions (PF + ESI + PT + TDS + LOP)
+            </p>
+          </div>
+        </div>
+
+        <!-- Structures Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Employee Salary Structures</h2>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Basic Salary</th>
+                  <th>Allowances (HRA/DA/Spec)</th>
+                  <th>Bonus</th>
+                  <th>Gross Salary</th>
+                  <th>Deductions (PF/PT/TDS)</th>
+                  <th>Net Monthly Take-Home</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="salary-tbody">
+                <tr><td colspan="8" style="text-align:center; padding:20px;">Loading salary structures...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Edit Salary Structure Modal -->
+  <div class="modal-overlay" id="salary-modal">
+    <div class="modal-dialog" style="max-width:700px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="salary-modal-title">Configure Salary Structure</h3>
+        <button class="modal-close" onclick="EPMS.closeModal('salary-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="salary-form" onsubmit="saveSalaryStructure(event)">
+          <input type="hidden" id="struct-emp-id">
+
+          <h4 style="font-size:0.85rem; font-weight:700; color:#1e3a8a; text-transform:uppercase; margin-bottom:12px;">Earnings Breakdown (₹)</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Basic Salary *</label>
+              <input type="number" id="struct-basic" class="form-control" required oninput="autoComputeComponents()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">House Rent Allowance (HRA)</label>
+              <input type="number" id="struct-hra" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Dearness Allowance (DA)</label>
+              <input type="number" id="struct-da" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Special Allowance</label>
+              <input type="number" id="struct-special" class="form-control" value="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Other Allowances</label>
+              <input type="number" id="struct-other-allow" class="form-control" value="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Performance Bonus</label>
+              <input type="number" id="struct-bonus" class="form-control" value="0">
+            </div>
+          </div>
+
+          <h4 style="font-size:0.85rem; font-weight:700; color:#dc2626; text-transform:uppercase; margin:16px 0 12px;">Statutory Deductions (₹)</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Provident Fund (PF - 12%)</label>
+              <input type="number" id="struct-pf" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Employee State Insurance (ESI)</label>
+              <input type="number" id="struct-esi" class="form-control" value="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Professional Tax (PT)</label>
+              <input type="number" id="struct-pt" class="form-control" value="200">
+            </div>
+            <div class="form-group">
+              <label class="form-label">TDS (Income Tax)</label>
+              <input type="number" id="struct-tds" class="form-control" value="0">
+            </div>
+          </div>
+
+          <div class="modal-footer" style="padding:16px 0 0 0; background:none;">
+            <button type="button" class="btn btn-outline" onclick="EPMS.closeModal('salary-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update Structure</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    let structures = [];
+
+    async function loadData() {
+      try {
+        const res = await fetch('/api/salary/structures');
+        const data = await res.json();
+        if (data.success) {
+          structures = data.structures;
+          renderStructures(structures);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderStructures(list) {
+      const tbody = document.getElementById('salary-tbody');
+      tbody.innerHTML = list.map(s => `
+        <tr>
+          <td>
+            <div style="font-weight:600; color:var(--dark);">${s.employee_name}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${s.employee_code} • ${s.department_name}</div>
+          </td>
+          <td style="font-weight:600;">${EPMS.formatINR(s.basic_salary)}</td>
+          <td>
+            <div style="font-size:0.85rem;">${EPMS.formatINR(s.total_allowances)}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">HRA: ${EPMS.formatINR(s.hra)}</div>
+          </td>
+          <td>${EPMS.formatINR(s.bonus)}</td>
+          <td style="font-weight:700; color:#1e3a8a;">${EPMS.formatINR(s.gross_salary)}</td>
+          <td style="color:#dc2626; font-size:0.85rem;">-${EPMS.formatINR(s.total_deductions)}</td>
+          <td style="font-weight:700; color:#059669; font-size:1rem;">${EPMS.formatINR(s.net_salary)}</td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="editStructure(${s.employee_id})">Configure</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function editStructure(empId) {
+      const s = structures.find(item => item.employee_id === empId);
+      if (!s) return;
+
+      document.getElementById('struct-emp-id').value = s.employee_id;
+      document.getElementById('struct-basic').value = s.basic_salary;
+      document.getElementById('struct-hra').value = s.hra;
+      document.getElementById('struct-da').value = s.da;
+      document.getElementById('struct-special').value = s.special_allowance;
+      document.getElementById('struct-other-allow').value = s.other_allowances;
+      document.getElementById('struct-bonus').value = s.bonus;
+      document.getElementById('struct-pf').value = s.pf_deduction;
+      document.getElementById('struct-esi').value = s.esi_deduction;
+      document.getElementById('struct-pt').value = s.professional_tax;
+      document.getElementById('struct-tds').value = s.tds_deduction;
+
+      document.getElementById('salary-modal-title').textContent = `Configure Structure: ${s.employee_name} (${s.employee_code})`;
+      EPMS.openModal('salary-modal');
+    }
+
+    function autoComputeComponents() {
+      const basic = Number(document.getElementById('struct-basic').value) || 0;
+      // Auto suggest 40% HRA, 15% DA, 12% PF
+      document.getElementById('struct-hra').value = Math.round(basic * 0.40);
+      document.getElementById('struct-da').value = Math.round(basic * 0.15);
+      document.getElementById('struct-pf').value = Math.round(basic * 0.12);
+    }
+
+    async function saveSalaryStructure(e) {
+      e.preventDefault();
+      const payload = {
+        employee_id: Number(document.getElementById('struct-emp-id').value),
+        basic_salary: Number(document.getElementById('struct-basic').value),
+        hra: Number(document.getElementById('struct-hra').value),
+        da: Number(document.getElementById('struct-da').value),
+        special_allowance: Number(document.getElementById('struct-special').value),
+        other_allowances: Number(document.getElementById('struct-other-allow').value),
+        bonus: Number(document.getElementById('struct-bonus').value),
+        pf_deduction: Number(document.getElementById('struct-pf').value),
+        esi_deduction: Number(document.getElementById('struct-esi').value),
+        professional_tax: Number(document.getElementById('struct-pt').value),
+        tds_deduction: Number(document.getElementById('struct-tds').value),
+      };
+
+      try {
+        const res = await fetch('/api/salary/structures', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.closeModal('salary-modal');
+          EPMS.showToast('Salary structure updated successfully', 'success');
+          loadData();
+        }
+      } catch (err) {
+        EPMS.showToast('Failed to save structure', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>

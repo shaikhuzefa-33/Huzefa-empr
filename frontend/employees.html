@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employees - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Employee Directory & Management</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <!-- Controls Bar -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-body" style="padding: 16px 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; gap: 12px; flex: 1; max-width: 600px; flex-wrap: wrap;">
+                <input type="text" id="search-input" class="form-control" style="max-width: 280px;" placeholder="Search by name, ID or email..." oninput="filterEmployees()">
+                <select id="dept-filter" class="form-control" style="max-width: 200px;" onchange="filterEmployees()">
+                  <option value="all">All Departments</option>
+                </select>
+                <select id="status-filter" class="form-control" style="max-width: 140px;" onchange="filterEmployees()">
+                  <option value="all">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="openAddEmployeeModal()">
+                <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add New Employee
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Employees Table Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Employee Records (<span id="emp-count">0</span>)</h2>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Contact Info</th>
+                  <th>Department & Role</th>
+                  <th>Joining Date</th>
+                  <th>Bank Details</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="employees-tbody">
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading employee directory...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add/Edit Employee Modal -->
+  <div class="modal-overlay" id="employee-modal">
+    <div class="modal-dialog" style="max-width: 750px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="employee-modal-title">Add New Employee</h3>
+        <button class="modal-close" onclick="EPMS.closeModal('employee-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="employee-form" onsubmit="saveEmployee(event)">
+          <input type="hidden" id="emp-id">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name *</label>
+              <input type="text" id="emp-first-name" class="form-control" required placeholder="e.g. John">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name *</label>
+              <input type="text" id="emp-last-name" class="form-control" required placeholder="e.g. Doe">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email Address *</label>
+              <input type="email" id="emp-email" class="form-control" required placeholder="john.doe@epms-corp.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number *</label>
+              <input type="text" id="emp-phone" class="form-control" required placeholder="+91 98765 43210">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Gender *</label>
+              <select id="emp-gender" class="form-control">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date of Birth *</label>
+              <input type="date" id="emp-dob" class="form-control" required value="1995-05-15">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date of Joining *</label>
+              <input type="date" id="emp-doj" class="form-control" required value="2024-01-15">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Department *</label>
+              <select id="emp-dept" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Designation *</label>
+              <select id="emp-desig" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Employment Type *</label>
+              <select id="emp-type" class="form-control">
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Intern">Intern</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Bank Name</label>
+              <input type="text" id="emp-bank-name" class="form-control" value="HDFC Bank">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bank Account Number *</label>
+              <input type="text" id="emp-bank-acc" class="form-control" required placeholder="50100492817263">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bank IFSC *</label>
+              <input type="text" id="emp-bank-ifsc" class="form-control" required placeholder="HDFC0001234">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">PAN Number</label>
+              <input type="text" id="emp-pan" class="form-control" placeholder="ABCDE1234F">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Initial Basic Monthly Salary (₹)</label>
+              <input type="number" id="emp-salary" class="form-control" value="50000">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Residential Address</label>
+            <textarea id="emp-address" class="form-control" rows="2" placeholder="Full residential street, city, state"></textarea>
+          </div>
+
+          <div class="modal-footer" style="padding: 16px 0 0 0; background:none;">
+            <button type="button" class="btn btn-outline" onclick="EPMS.closeModal('employee-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="save-emp-btn">Save Employee</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Employee Detail Modal -->
+  <div class="modal-overlay" id="view-emp-modal">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Employee Profile & Compensation Dossier</h3>
+        <button class="modal-close" onclick="EPMS.closeModal('view-emp-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="view-emp-body">
+        Loading...
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="EPMS.closeModal('view-emp-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let allEmployees = [];
+    let allDepartments = [];
+    let allDesignations = [];
+
+    async function loadInitialData() {
+      try {
+        const [empRes, deptRes, desigRes] = await Promise.all([
+          fetch('/api/employees'),
+          fetch('/api/departments'),
+          fetch('/api/designations'),
+        ]);
+
+        const empData = await empRes.json();
+        const deptData = await deptRes.json();
+        const desigData = await desigRes.json();
+
+        if (deptData.success) {
+          allDepartments = deptData.departments;
+          populateDepartmentSelects();
+        }
+        if (desigData.success) {
+          allDesignations = desigData.designations;
+          populateDesignationSelects();
+        }
+        if (empData.success) {
+          allEmployees = empData.employees;
+          renderEmployees(allEmployees);
+        }
+      } catch (err) {
+        console.error('Error loading employees', err);
+      }
+    }
+
+    function populateDepartmentSelects() {
+      const filterSelect = document.getElementById('dept-filter');
+      const formSelect = document.getElementById('emp-dept');
+      
+      const optionsHtml = allDepartments.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+      filterSelect.innerHTML = `<option value="all">All Departments</option>` + optionsHtml;
+      formSelect.innerHTML = optionsHtml;
+    }
+
+    function populateDesignationSelects() {
+      const formSelect = document.getElementById('emp-desig');
+      formSelect.innerHTML = allDesignations.map(d => `<option value="${d.id}">${d.designation_name} (${d.department_name})</option>`).join('');
+    }
+
+    function renderEmployees(list) {
+      const tbody = document.getElementById('employees-tbody');
+      document.getElementById('emp-count').textContent = list.length;
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-muted);">No matching employee records found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(emp => {
+        const photo = emp.profile_picture || '/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg';
+        const hasCustomPhoto = !!emp.profile_picture;
+
+        return `
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <img src="${photo}" alt="${emp.first_name}" style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid ${hasCustomPhoto ? '#2563eb' : '#cbd5e1'};" onerror="this.src='/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg'" />
+                <div>
+                  <div style="font-weight:700; color:var(--dark); cursor:pointer;" onclick="viewEmployee(${emp.id})">
+                    ${emp.first_name} ${emp.last_name}
+                  </div>
+                  <div style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;">
+                    ${emp.employee_code}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-size:0.85rem;">${emp.email}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">${emp.phone}</div>
+            </td>
+            <td>
+              <div style="font-weight:600;">${emp.designation_name}</div>
+              <span class="badge badge-info" style="font-size:0.7rem; padding:2px 8px;">${emp.department_name}</span>
+            </td>
+            <td style="font-size:0.85rem;">${emp.date_of_joining}</td>
+            <td>
+              <div style="font-size:0.8rem; font-weight:600;">${emp.bank_name || 'HDFC'}</div>
+              <div style="font-size:0.72rem; color:var(--text-muted); font-family:monospace;">A/C: ${emp.bank_account_number}</div>
+            </td>
+            <td>
+              <span class="badge ${emp.status === 'Active' ? 'badge-success' : 'badge-danger'}">
+                ${emp.status}
+              </span>
+            </td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-outline btn-sm" onclick="viewEmployee(${emp.id})">View</button>
+                <button class="btn btn-outline btn-sm" onclick="editEmployee(${emp.id})">Edit</button>
+                ${emp.status === 'Active' ? `<button class="btn btn-outline btn-sm" style="color:var(--danger);" onclick="deactivateEmployee(${emp.id}, '${emp.first_name}')">Deactivate</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterEmployees() {
+      const q = document.getElementById('search-input').value.toLowerCase();
+      const dept = document.getElementById('dept-filter').value;
+      const status = document.getElementById('status-filter').value;
+
+      let filtered = allEmployees;
+
+      if (q) {
+        filtered = filtered.filter(e => 
+          e.first_name.toLowerCase().includes(q) ||
+          e.last_name.toLowerCase().includes(q) ||
+          e.employee_code.toLowerCase().includes(q) ||
+          e.email.toLowerCase().includes(q)
+        );
+      }
+
+      if (dept !== 'all') {
+        filtered = filtered.filter(e => e.department_id === Number(dept));
+      }
+
+      if (status !== 'all') {
+        filtered = filtered.filter(e => e.status === status);
+      }
+
+      renderEmployees(filtered);
+    }
+
+    function openAddEmployeeModal() {
+      document.getElementById('employee-form').reset();
+      document.getElementById('emp-id').value = '';
+      document.getElementById('employee-modal-title').textContent = 'Add New Employee';
+      EPMS.openModal('employee-modal');
+    }
+
+    function editEmployee(id) {
+      const emp = allEmployees.find(e => e.id === id);
+      if (!emp) return;
+
+      document.getElementById('emp-id').value = emp.id;
+      document.getElementById('emp-first-name').value = emp.first_name;
+      document.getElementById('emp-last-name').value = emp.last_name;
+      document.getElementById('emp-email').value = emp.email;
+      document.getElementById('emp-phone').value = emp.phone;
+      document.getElementById('emp-gender').value = emp.gender;
+      document.getElementById('emp-dob').value = emp.date_of_birth;
+      document.getElementById('emp-doj').value = emp.date_of_joining;
+      document.getElementById('emp-dept').value = emp.department_id;
+      document.getElementById('emp-desig').value = emp.designation_id;
+      document.getElementById('emp-type').value = emp.employment_type;
+      document.getElementById('emp-bank-name').value = emp.bank_name || '';
+      document.getElementById('emp-bank-acc').value = emp.bank_account_number;
+      document.getElementById('emp-bank-ifsc').value = emp.bank_ifsc;
+      document.getElementById('emp-pan').value = emp.pan_number || '';
+      document.getElementById('emp-address').value = emp.address || '';
+
+      document.getElementById('employee-modal-title').textContent = `Edit Employee: ${emp.employee_code}`;
+      EPMS.openModal('employee-modal');
+    }
+
+    async function saveEmployee(e) {
+      e.preventDefault();
+      const id = document.getElementById('emp-id').value;
+      const payload = {
+        first_name: document.getElementById('emp-first-name').value,
+        last_name: document.getElementById('emp-last-name').value,
+        email: document.getElementById('emp-email').value,
+        phone: document.getElementById('emp-phone').value,
+        gender: document.getElementById('emp-gender').value,
+        date_of_birth: document.getElementById('emp-dob').value,
+        date_of_joining: document.getElementById('emp-doj').value,
+        department_id: Number(document.getElementById('emp-dept').value),
+        designation_id: Number(document.getElementById('emp-desig').value),
+        employment_type: document.getElementById('emp-type').value,
+        bank_name: document.getElementById('emp-bank-name').value,
+        bank_account_number: document.getElementById('emp-bank-acc').value,
+        bank_ifsc: document.getElementById('emp-bank-ifsc').value,
+        pan_number: document.getElementById('emp-pan').value,
+        address: document.getElementById('emp-address').value,
+        basic_salary: Number(document.getElementById('emp-salary').value) || 45000,
+      };
+
+      try {
+        const url = id ? `/api/employees/${id}` : '/api/employees';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.closeModal('employee-modal');
+          EPMS.showToast(data.message, 'success');
+          loadInitialData();
+        } else {
+          EPMS.showToast(data.message, 'error');
+        }
+      } catch (err) {
+        EPMS.showToast('Failed to save employee', 'error');
+      }
+    }
+
+    async function deactivateEmployee(id, name) {
+      if (!confirm(`Are you sure you want to deactivate employee ${name}?`)) return;
+      try {
+        const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.showToast(data.message, 'info');
+          loadInitialData();
+        }
+      } catch (err) {
+        EPMS.showToast('Deactivation failed', 'error');
+      }
+    }
+
+    async function viewEmployee(id) {
+      try {
+        const res = await fetch(`/api/employees/${id}`);
+        const data = await res.json();
+        if (data.success) {
+          const emp = data.employee;
+          const photo = emp.profile_picture || '/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg';
+
+          let balancesHtml = emp.leave_balances.map(b => `
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; text-align:center;">
+              <div style="font-size:0.75rem; color:#64748b; font-weight:600;">${b.leave_name}</div>
+              <div style="font-size:1.1rem; font-weight:700; color:#1e3a8a;">${b.remaining_days} / ${b.allocated_days}</div>
+            </div>
+          `).join('');
+
+          document.getElementById('view-emp-body').innerHTML = `
+            <div style="display:flex; gap:20px; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #e2e8f0;">
+              <img src="${photo}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #2563eb;" onerror="this.src='/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg'" />
+              <div>
+                <h3 style="font-size:1.25rem; font-weight:700; color:#0f172a;">${emp.first_name} ${emp.last_name}</h3>
+                <div style="font-size:0.88rem; color:#2563eb; font-weight:600;">${emp.designation_name} • ${emp.department_name}</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:4px;">ID: ${emp.employee_code} • Joining: ${emp.date_of_joining}</div>
+              </div>
+            </div>
+
+            <h4 style="font-size:0.88rem; font-weight:700; color:#1e293b; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Leave Quotas (2026)</h4>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:20px;">
+              ${balancesHtml}
+            </div>
+
+            <h4 style="font-size:0.88rem; font-weight:700; color:#1e293b; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Bank & Statutory Details</h4>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; font-size:0.85rem; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div><strong>Bank Name:</strong> ${emp.bank_name || 'HDFC Bank'}</div>
+              <div><strong>Account Number:</strong> ${emp.bank_account_number}</div>
+              <div><strong>IFSC Code:</strong> ${emp.bank_ifsc}</div>
+              <div><strong>PAN Number:</strong> ${emp.pan_number || 'N/A'}</div>
+              <div style="grid-column: span 2;"><strong>Address:</strong> ${emp.address || 'Standard Registered Address'}</div>
+            </div>
+          `;
+          EPMS.openModal('view-emp-modal');
+        }
+      } catch (err) {
+        EPMS.showToast('Could not load employee details', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadInitialData();
+    });
+  </script>
+</body>
+</html>

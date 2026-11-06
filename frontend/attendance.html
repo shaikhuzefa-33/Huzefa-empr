@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Attendance Tracking & Timesheets</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <!-- Self Punch In / Out Card -->
+        <div class="card" style="background: linear-gradient(135deg, #0f172a, #1e3a8a); color:white; border:none;">
+          <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div>
+              <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:#93c5fd; font-weight:700;">Live Clock & Attendance Action</span>
+              <h2 style="font-size:1.5rem; font-weight:700; margin-top:4px;" id="live-clock">10:00:00 AM</h2>
+              <p style="font-size:0.85rem; color:#cbd5e1;" id="today-date-string">Friday, November 6, 2026</p>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <button class="btn btn-success" style="padding:12px 24px; font-size:0.95rem;" onclick="handlePunch('in')">
+                <svg style="width:18px; height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                Punch In (Check-In)
+              </button>
+              <button class="btn btn-outline" style="background:rgba(255,255,255,0.1); color:white; border-color:rgba(255,255,255,0.25); padding:12px 24px; font-size:0.95rem;" onclick="handlePunch('out')">
+                <svg style="width:18px; height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Punch Out (Check-Out)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Logs Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Attendance Logs</h2>
+            <div style="display:flex; gap:10px;">
+              <input type="date" id="att-date-filter" class="form-control" style="width:auto; padding:5px 10px;" value="2026-11-06" onchange="loadAttendance()">
+              <button class="btn btn-outline btn-sm" onclick="loadAttendance()">Refresh</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Date</th>
+                  <th>Check-In</th>
+                  <th>Check-Out</th>
+                  <th>Total Working Hours</th>
+                  <th>Status</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="att-tbody">
+                <tr><td colspan="7" style="text-align:center; padding:20px;">Loading attendance records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('live-clock').textContent = now.toLocaleTimeString('en-US');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    async function loadAttendance() {
+      const date = document.getElementById('att-date-filter').value;
+      try {
+        const res = await fetch(`/api/attendance${date ? `?date=${date}` : ''}`);
+        const data = await res.json();
+        if (data.success) {
+          renderAttendance(data.attendance);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderAttendance(list) {
+      const tbody = document.getElementById('att-tbody');
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No logs found for this date.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(a => {
+        let badgeClass = 'badge-success';
+        if (a.status === 'Absent') badgeClass = 'badge-danger';
+        if (a.status === 'Half-day') badgeClass = 'badge-warning';
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:600; color:var(--dark);">${a.employee_name}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;">${a.employee_code}</div>
+            </td>
+            <td>${a.attendance_date}</td>
+            <td style="font-weight:600; color:#059669;">${a.check_in || '—'}</td>
+            <td style="font-weight:600; color:#2563eb;">${a.check_out || '—'}</td>
+            <td style="font-weight:700;">${a.total_hours ? a.total_hours + ' hrs' : 'In Progress'}</td>
+            <td><span class="badge ${badgeClass}">${a.status}</span></td>
+            <td style="font-size:0.85rem; color:var(--text-muted);">${a.remarks || 'Standard day'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function handlePunch(type) {
+      try {
+        const endpoint = type === 'in' ? '/api/attendance/check-in' : '/api/attendance/check-out';
+        const res = await fetch(endpoint, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.showToast(data.message, 'success');
+          loadAttendance();
+        } else {
+          EPMS.showToast(data.message, 'error');
+        }
+      } catch (err) {
+        EPMS.showToast('Punch operation failed', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAttendance);
+  </script>
+</body>
+</html>

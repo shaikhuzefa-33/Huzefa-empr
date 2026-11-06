@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payroll Processing - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Monthly Payroll Processing Engine</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <!-- Payroll Wizard Generator Card -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <h2 class="card-title">Run Payroll Cycle</h2>
+            <span class="badge badge-info" id="period-status-badge">Select Period</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+              <div class="form-group" style="margin-bottom:0; min-width:180px;">
+                <label class="form-label">Payroll Period</label>
+                <select id="period-select" class="form-control" onchange="loadSelectedPeriod()">
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom:0; width:140px;">
+                <label class="form-label">Month (1-12)</label>
+                <input type="number" id="gen-month" class="form-control" min="1" max="12" value="11">
+              </div>
+
+              <div class="form-group" style="margin-bottom:0; width:120px;">
+                <label class="form-label">Year</label>
+                <input type="number" id="gen-year" class="form-control" value="2026">
+              </div>
+
+              <button class="btn btn-primary" onclick="generatePayroll()">
+                <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                Calculate & Process Payroll
+              </button>
+
+              <button class="btn btn-success" id="btn-approve-period" style="display:none;" onclick="approvePayrollPeriod()">
+                Approve & Finalize Period
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Period Summary Totals -->
+        <div class="stats-grid" style="margin-bottom:24px;">
+          <div class="stat-card" style="padding:16px 20px;">
+            <div>
+              <span style="font-size:0.75rem;">Total Employees in Batch</span>
+              <h3 id="batch-emp-count" style="font-size:1.6rem; color:#1e3a8a;">0</h3>
+            </div>
+          </div>
+          <div class="stat-card" style="padding:16px 20px;">
+            <div>
+              <span style="font-size:0.75rem;">Gross Expenditure</span>
+              <h3 id="batch-gross-total" style="font-size:1.6rem; color:#2563eb;">₹ 0</h3>
+            </div>
+          </div>
+          <div class="stat-card" style="padding:16px 20px;">
+            <div>
+              <span style="font-size:0.75rem;">Total Statutory Deductions</span>
+              <h3 id="batch-ded-total" style="font-size:1.6rem; color:#dc2626;">₹ 0</h3>
+            </div>
+          </div>
+          <div class="stat-card" style="padding:16px 20px;">
+            <div>
+              <span style="font-size:0.75rem;">Net Take-Home Disbursable</span>
+              <h3 id="batch-net-total" style="font-size:1.6rem; color:#059669;">₹ 0</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Processed Line Items Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Employee Payroll Register Details</h2>
+            <a href="payments.html" class="btn btn-outline btn-sm">Go to Disbursements Ledger →</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Payable Days</th>
+                  <th>Basic Salary</th>
+                  <th>Allowances</th>
+                  <th>Bonus</th>
+                  <th>Gross Salary</th>
+                  <th>Total Deductions</th>
+                  <th>Net Payable</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="payroll-tbody">
+                <tr><td colspan="9" style="text-align:center; padding:24px;">Select a period above to review line items.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    let currentPeriodId = 1;
+
+    async function loadPeriods() {
+      try {
+        const res = await fetch('/api/payroll/periods');
+        const data = await res.json();
+        if (data.success && data.periods.length > 0) {
+          const select = document.getElementById('period-select');
+          select.innerHTML = data.periods.map(p => `
+            <option value="${p.id}">${p.period_name} (${p.status})</option>
+          `).join('');
+          currentPeriodId = data.periods[0].id;
+          loadSelectedPeriod();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadSelectedPeriod() {
+      const pId = document.getElementById('period-select').value || currentPeriodId;
+      try {
+        const res = await fetch(`/api/payroll/period/${pId}`);
+        const data = await res.json();
+        if (data.success) {
+          renderPeriodDetails(data.period, data.items);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderPeriodDetails(period, items) {
+      document.getElementById('period-status-badge').textContent = `Status: ${period.status}`;
+      document.getElementById('batch-emp-count').textContent = items.length;
+
+      const gross = items.reduce((s, i) => s + i.gross_salary, 0);
+      const deductions = items.reduce((s, i) => s + i.total_deductions, 0);
+      const net = items.reduce((s, i) => s + i.net_salary, 0);
+
+      document.getElementById('batch-gross-total').textContent = EPMS.formatINR(gross);
+      document.getElementById('batch-ded-total').textContent = EPMS.formatINR(deductions);
+      document.getElementById('batch-net-total').textContent = EPMS.formatINR(net);
+
+      const approveBtn = document.getElementById('btn-approve-period');
+      if (period.status !== 'Approved' && period.status !== 'Paid' && period.status !== 'Closed') {
+        approveBtn.style.display = 'inline-flex';
+      } else {
+        approveBtn.style.display = 'none';
+      }
+
+      const tbody = document.getElementById('payroll-tbody');
+      tbody.innerHTML = items.map(p => `
+        <tr>
+          <td>
+            <div style="font-weight:600; color:var(--dark);">${p.employee_name}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${p.employee_code} • ${p.department_name}</div>
+          </td>
+          <td style="font-weight:600;">${p.worked_days + p.paid_leave_days} / ${p.total_days} d</td>
+          <td>${EPMS.formatINR(p.basic_salary)}</td>
+          <td>${EPMS.formatINR(p.total_allowances)}</td>
+          <td>${EPMS.formatINR(p.bonus)}</td>
+          <td style="font-weight:700; color:#1e3a8a;">${EPMS.formatINR(p.gross_salary)}</td>
+          <td style="color:#dc2626;">-${EPMS.formatINR(p.total_deductions)}</td>
+          <td style="font-weight:700; color:#059669; font-size:1rem;">${EPMS.formatINR(p.net_salary)}</td>
+          <td><span class="badge ${p.payment_status === 'Paid' ? 'badge-success' : 'badge-warning'}">${p.payment_status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    async function generatePayroll() {
+      const month = document.getElementById('gen-month').value;
+      const year = document.getElementById('gen-year').value;
+
+      try {
+        const res = await fetch('/api/payroll/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ month, year }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.showToast(data.message, 'success');
+          loadPeriods();
+        } else {
+          EPMS.showToast(data.message, 'error');
+        }
+      } catch (err) {
+        EPMS.showToast('Payroll calculation failed', 'error');
+      }
+    }
+
+    async function approvePayrollPeriod() {
+      const pId = document.getElementById('period-select').value;
+      try {
+        const res = await fetch(`/api/payroll/period/${pId}/approve`, { method: 'PUT' });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.showToast(data.message, 'success');
+          loadSelectedPeriod();
+        } else {
+          EPMS.showToast(data.message, 'error');
+        }
+      } catch (err) {
+        EPMS.showToast('Approval failed', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPeriods);
+  </script>
+</body>
+</html>

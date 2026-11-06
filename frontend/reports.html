@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Executive Reports & Cost Analytics</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <div>
+            <h2 style="font-size:1.1rem; font-weight:700; color:var(--dark);">Departmental Compensation Breakdown</h2>
+            <p style="font-size:0.85rem; color:var(--text-muted);">Aggregate cost analysis across all corporate organizational units.</p>
+          </div>
+          <button class="btn btn-primary" onclick="exportReportToCsv()">
+            <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Export CSV Report
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table" id="report-table">
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Head of Department</th>
+                  <th>Headcount</th>
+                  <th>Monthly Gross Cost</th>
+                  <th>Monthly Net Disbursed</th>
+                  <th>Cost Share</th>
+                </tr>
+              </thead>
+              <tbody id="report-tbody">
+                <tr><td colspan="6" style="text-align:center; padding:20px;">Generating cost reports...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    let reportData = [];
+
+    async function loadReport() {
+      try {
+        const res = await fetch('/api/reports/summary');
+        const data = await res.json();
+        if (data.success) {
+          reportData = data.departmentSummary;
+          renderReport(reportData);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderReport(list) {
+      const tbody = document.getElementById('report-tbody');
+      const totalNet = list.reduce((s, i) => s + i.monthly_net_cost, 0);
+
+      tbody.innerHTML = list.map(item => {
+        const pct = totalNet > 0 ? Math.round((item.monthly_net_cost / totalNet) * 100) : 0;
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:600; color:var(--dark);">${item.department_name}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-family:monospace;">${item.department_code}</div>
+            </td>
+            <td>${item.head_of_department || '—'}</td>
+            <td style="font-weight:700;">${item.employee_count}</td>
+            <td style="font-weight:600; color:#1e3a8a;">${EPMS.formatINR(item.monthly_gross_cost)}</td>
+            <td style="font-weight:700; color:#059669; font-size:1rem;">${EPMS.formatINR(item.monthly_net_cost)}</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="flex:1; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
+                  <div style="width:${pct}%; height:100%; background:#2563eb;"></div>
+                </div>
+                <span style="font-size:0.75rem; font-weight:700; color:#1e293b;">${pct}%</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function exportReportToCsv() {
+      let csv = 'Department,Code,Head of Department,Headcount,Monthly Gross Cost,Monthly Net Disbursed\n';
+      reportData.forEach(d => {
+        csv += `"${d.department_name}","${d.department_code}","${d.head_of_department}",${d.employee_count},${d.monthly_gross_cost},${d.monthly_net_cost}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `epms_payroll_report_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      EPMS.showToast('CSV report generated and downloaded', 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadReport);
+  </script>
+</body>
+</html>

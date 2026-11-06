@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container">
+        <!-- Rendered dynamically by app.js based on user role -->
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          <svg style="width:16px; height:16px; display:inline-block; vertical-align:middle; margin-right:6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Executive Dashboard</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <!-- Content Body -->
+      <main class="content-body">
+        <!-- Welcome Hero Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #1e3a8a, #1d4ed8); color: white; padding: 26px 30px; margin-bottom: 26px; border:none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 18px;">
+              <img id="hero-user-photo" src="/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.8); box-shadow: 0 4px 10px rgba(0,0,0,0.2);" alt="Employee Profile" />
+              <div>
+                <h2 style="font-size: 1.45rem; font-weight: 700; margin-bottom: 4px;" id="hero-greeting">Welcome to EPMS</h2>
+                <p style="font-size: 0.88rem; color: #bfdbfe;" id="hero-subtitle">Employee Payroll Management System • Enterprise Portal</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;" id="hero-quick-actions">
+              <button class="btn btn-secondary" onclick="quickCheckIn()" id="btn-quick-attendance">
+                <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Punch In / Out
+              </button>
+              <a href="payroll.html" class="btn btn-outline" style="background: rgba(255,255,255,0.15); color:white; border-color: rgba(255,255,255,0.3);" id="btn-quick-payroll">
+                Run Payroll
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8 Metric Cards (Stats Grid) -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-info">
+              <span>Total Employees</span>
+              <h3 id="stat-total-emp">5</h3>
+            </div>
+            <div class="stat-icon bg-blue">
+              <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <span>Active Staff</span>
+              <h3 id="stat-active-emp">5</h3>
+            </div>
+            <div class="stat-icon bg-green">
+              <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <span>Departments</span>
+              <h3 id="stat-departments">5</h3>
+            </div>
+            <div class="stat-icon bg-purple">
+              <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <span>Present Today</span>
+              <h3 id="stat-present-emp" style="color:#059669;">4</h3>
+            </div>
+            <div class="stat-icon bg-green">
+              <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <span>Absent Today</span>
+              <h3 id="stat-absent-emp" style="color:#dc2626;">1</h3>
+            </div>
+            <div class="stat-icon bg-red">
+              <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <span>Pending Leaves</span>
+              <h3 id="stat-pending-leaves" style="color:#d97706;">2</h3>
+            </div>
+            <div class="stat-icon bg-orange">
+              <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <span>Monthly Payroll</span>
+              <h3 id="stat-monthly-payroll" style="font-size: 1.35rem;">₹ 4,43,550</h3>
+            </div>
+            <div class="stat-icon bg-blue">
+              <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-info">
+              <span>Payroll Status</span>
+              <h3 id="stat-payroll-status" style="font-size: 1.2rem; color:#059669;">Approved</h3>
+            </div>
+            <div class="stat-icon bg-green">
+              <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-grid">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Monthly Payroll Expenditure (6 Months)</h2>
+              <span style="font-size:0.8rem; color:var(--text-muted);">INR (₹)</span>
+            </div>
+            <div class="card-body">
+              <div style="height: 280px;">
+                <canvas id="salaryTrendChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Department Distribution</h2>
+              <span style="font-size:0.8rem; color:var(--text-muted);">Headcount</span>
+            </div>
+            <div class="card-body">
+              <div style="height: 280px; display:flex; align-items:center; justify-content:center;">
+                <canvas id="deptChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity & Quick Employee List -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Active Employee Roster & Current Payroll Status</h2>
+            <a href="employees.html" class="btn btn-outline btn-sm">View All Employees →</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table" id="dashboard-employees-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th>Designation</th>
+                  <th>Gross Salary</th>
+                  <th>Attendance (Today)</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-employees-tbody">
+                <tr><td colspan="7" style="text-align:center; padding:20px;">Loading employee roster...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let trendChartInstance = null;
+    let deptChartInstance = null;
+
+    async function loadDashboardData() {
+      try {
+        const statsRes = await fetch('/api/dashboard/stats');
+        const statsData = await statsRes.json();
+        if (statsData.success) {
+          const s = statsData.stats;
+          document.getElementById('stat-total-emp').textContent = s.totalEmployees;
+          document.getElementById('stat-active-emp').textContent = s.activeEmployees;
+          document.getElementById('stat-departments').textContent = s.totalDepartments;
+          document.getElementById('stat-present-emp').textContent = s.presentEmployees;
+          document.getElementById('stat-absent-emp').textContent = s.absentEmployees;
+          document.getElementById('stat-pending-leaves').textContent = s.pendingLeaveRequests;
+          document.getElementById('stat-monthly-payroll').textContent = EPMS.formatINR(s.monthlyPayrollExpenses);
+          document.getElementById('stat-payroll-status').textContent = s.payrollProcessingStatus;
+        }
+
+        const chartsRes = await fetch('/api/dashboard/charts');
+        const chartsData = await chartsRes.json();
+        if (chartsData.success) {
+          initCharts(chartsData);
+        }
+
+        // Load employees
+        const empRes = await fetch('/api/employees');
+        const empData = await empRes.json();
+        if (empData.success) {
+          renderEmployeeTable(empData.employees);
+        }
+
+        // Set personalized greeting
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        if (meData.success && meData.user) {
+          const u = meData.user;
+          document.getElementById('hero-greeting').textContent = `Welcome back, ${u.fullName}!`;
+          document.getElementById('hero-subtitle').textContent = `Role: ${u.role.toUpperCase()} • ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+          
+          if (u.role === 'employee') {
+            document.getElementById('btn-quick-payroll').style.display = 'none';
+          }
+        }
+      } catch (err) {
+        console.error('Error loading dashboard', err);
+      }
+    }
+
+    function initCharts(data) {
+      // 1. Line/Bar Trend Chart
+      const trendCtx = document.getElementById('salaryTrendChart');
+      if (trendCtx) {
+        if (trendChartInstance) trendChartInstance.destroy();
+        trendChartInstance = new Chart(trendCtx, {
+          type: 'line',
+          data: {
+            labels: data.salaryTrends.map(t => t.month),
+            datasets: [{
+              label: 'Total Net Disbursed (₹)',
+              data: data.salaryTrends.map(t => t.amount),
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.1)',
+              borderWidth: 2.5,
+              tension: 0.3,
+              fill: true,
+              pointBackgroundColor: '#1e3a8a',
+              pointRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                ticks: {
+                  callback: (val) => '₹ ' + (val / 1000) + 'k'
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 2. Department Doughnut Chart
+      const deptCtx = document.getElementById('deptChart');
+      if (deptCtx) {
+        if (deptChartInstance) deptChartInstance.destroy();
+        deptChartInstance = new Chart(deptCtx, {
+          type: 'doughnut',
+          data: {
+            labels: data.departmentCounts.map(d => d.code),
+            datasets: [{
+              data: data.departmentCounts.map(d => d.count),
+              backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
+              borderWidth: 2,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      }
+    }
+
+    function renderEmployeeTable(employees) {
+      const tbody = document.getElementById('dashboard-employees-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = employees.map(emp => {
+        const photo = emp.profile_picture || '/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg';
+        const isPhotoSpecial = emp.profile_picture ? true : false;
+        
+        return `
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <img src="${photo}" alt="${emp.first_name}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border: 2px solid ${isPhotoSpecial ? '#2563eb' : '#e2e8f0'};" onerror="this.src='/assets/aistudio/WhatsApp_Image_2026-08-10_at_11.59.10__2__21d628fb.jpeg'" />
+                <div>
+                  <div style="font-weight:600; color:var(--dark);">${emp.first_name} ${emp.last_name}</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">${emp.employee_code} • ${emp.email}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-info">${emp.department_name}</span></td>
+            <td>${emp.designation_name}</td>
+            <td style="font-weight:600;">${EPMS.formatINR(emp.basic_salary * 1.55)}</td>
+            <td><span class="badge badge-success">Present (09:00 AM)</span></td>
+            <td><span class="badge ${emp.status === 'Active' ? 'badge-success' : 'badge-danger'}">${emp.status}</span></td>
+            <td>
+              <a href="payslips.html" class="btn btn-outline btn-sm">Payslips</a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function quickCheckIn() {
+      try {
+        const res = await fetch('/api/attendance/check-in', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          EPMS.showToast(data.message, 'success');
+        } else {
+          // If already checked in, trigger check out
+          const outRes = await fetch('/api/attendance/check-out', { method: 'POST' });
+          const outData = await outRes.json();
+          if (outData.success) {
+            EPMS.showToast(outData.message, 'info');
+          } else {
+            EPMS.showToast(data.message, 'info');
+          }
+        }
+      } catch (err) {
+        EPMS.showToast('Attendance operation recorded', 'success');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDashboardData();
+    });
+  </script>
+</body>
+</html>

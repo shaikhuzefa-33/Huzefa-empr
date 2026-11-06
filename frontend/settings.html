@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Employee Payroll Management System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">EP</div>
+        <div class="brand-text">
+          <h2>EPMS Portal</h2>
+          <span>Enterprise Payroll</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav-container"></nav>
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm" style="width: 100%; color: #cbd5e1; border-color: rgba(255,255,255,0.15);" onclick="EPMS.logout()">
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">System Settings & Compliance Configuration</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="role-switcher-badge" id="user-role-badge"></div>
+          <div class="user-profile-badge" id="user-profile-widget" onclick="window.location.href='settings.html'"></div>
+        </div>
+      </header>
+
+      <main class="content-body">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+          <!-- Corporate Profile -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Corporate Entity Profile</h2>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Company Legal Name</label>
+                <input type="text" class="form-control" value="EPMS Technologies Corporation" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">GSTIN / Corporate Tax ID</label>
+                <input type="text" class="form-control" value="36AAACE1234F1Z8" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Corporate Headquarters</label>
+                <textarea class="form-control" rows="2" readonly>Plot 104, Cyber City Phase 2, IT Hub, Hyderabad, India - 500081</textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payroll Support Email</label>
+                <input type="text" class="form-control" value="payroll@epms-corp.com" readonly>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statutory Rates -->
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Statutory Deduction Rules</h2>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Employee Provident Fund (PF)</label>
+                <input type="text" class="form-control" value="12% of Basic Salary" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Employee State Insurance (ESI)</label>
+                <input type="text" class="form-control" value="0.75% for Gross <= ₹21,000/mo" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Professional Tax (PT)</label>
+                <input type="text" class="form-control" value="₹200.00 Fixed Monthly" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">House Rent Allowance (HRA)</label>
+                <input type="text" class="form-control" value="40% (Non-metro) / 50% (Metro)" readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testing & Database Guide -->
+        <div class="card" style="margin-top:24px;">
+          <div class="card-header">
+            <h2 class="card-title">MySQL 8.0 & Windows 10/11 Architecture Guide</h2>
+          </div>
+          <div class="card-body">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:18px; font-size:0.88rem; line-height:1.6;">
+              <h3 style="font-size:1rem; font-weight:700; color:#1e3a8a; margin-bottom:8px;">Database Configuration:</h3>
+              <p>Schema File: <code>/database/schema.sql</code> (15 normalized tables with Foreign Keys, Indexes, Unique constraints, and seeds).</p>
+              <p>Backend Connection: <code>backend/config/db.ts</code> uses <code>mysql2/promise</code> with auto-fallback to persistent mock storage when MySQL host is offline.</p>
+              
+              <h3 style="font-size:1rem; font-weight:700; color:#1e3a8a; margin:16px 0 8px;">Role Credentials Cheatsheet:</h3>
+              <ul style="padding-left:20px;">
+                <li><strong>Admin:</strong> <code>admin@epms-corp.com</code> / <code>Password@123</code> (Full system access, all 12 modules)</li>
+                <li><strong>HR Manager:</strong> <code>hr@epms-corp.com</code> / <code>Password@123</code> (Employee, attendance, leave approval, payroll)</li>
+                <li><strong>Employee:</strong> <code>huzefa@epms-corp.com</code> / <code>Password@123</code> (Personal dashboard, punches, leave apply, payslip download)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/app.js"></script>
+</body>
+</html>
